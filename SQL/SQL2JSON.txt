@@ -9,6 +9,8 @@
 // Dependancies:
 //  BaseElements plugin :: BE_EvaluateJavaScript( $jsCode )
 //
+// Signature: SQL2JSON( query, fieldList, sqlParams )
+//
 // Example 0:
 //  SQL2JSON( "SELECT Id, Name FROM CONTACTS"; List( "id"; "name" ); "" )
 //  => [{"id":1,"name":"John Doe"},{"id":2,"name":"Jane Doe"},{"id":3,"name":"Jack Blue"},{...}]

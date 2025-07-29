@@ -6,8 +6,10 @@
 // 
 // Dependancies: None
 //
+// Signature: SQLTable( FMName ) : FMName is a fully qualified field name
+// 
 // Example 0:
-//  SQLFieldTable( "CONTACTS::Id" )
+//  SQLTable( "CONTACTS::Id" )
 //  => "\"CONTACTS\""
 //
 // Example 1:

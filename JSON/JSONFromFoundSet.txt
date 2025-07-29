@@ -1,9 +1,14 @@
 // Author: Joshua Palmer - pillarofire@gmail.com
 //
-// Purpose: turn a series of records in the found set into JSON, based on the fields given.
+// Purpose: turn a series of records in the found set into flat JSON, based on the fields given.
 //
 // Dependancies: None
 //
+// Signature: JSONFromFoundSet( fieldList; limit; offset ) 
+// 	fieldList is a return delimited list of field names
+//  limit is the maximum number of records to return
+//  offset is the number of records to skip before returning results.
+// 
 // Example 0:
 //  JSONFromFoundSet( "CONTACTS::Id¶CONTACTS::Note"; 100; 0 )
 //  => "[{\"CONTACTS\":\"1\",\"CONTACTS\":\"Hello World\"},...,{\"CONTACTS\":\"100\",\"CONTACTS\":\"Goodbye World\"}]"
