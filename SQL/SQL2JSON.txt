@@ -6,8 +6,7 @@
 //  and fieldList is a return delimited list of key names corresponding to the row keynames in the query selection. 
 //  Using wildcard field selectors is not recommended.
 // 
-// Dependancies:
-//  BaseElements plugin :: BE_EvaluateJavaScript( $jsCode )
+// Dependancies: None
 //
 // Signature: SQL2JSON( query, fieldList, sqlParams )
 //
@@ -22,7 +21,7 @@
 // Version 1.0.0 : 2021:07:08 14:10:40 -0700 : Joshua Palmer
 // Version 1.1.0 : 2025:07:29 13:35:58 -0700 : Joshua Palmer : Removed dependency on BaseElements plugin, replaced with native FileMaker JSON functions.
 //
-// Limitations: Max string length of FileMaker
+// Limitations: Slow for large result sets. (nested While loop), Max character return length limited by FileMaker
 
 Let([
 
