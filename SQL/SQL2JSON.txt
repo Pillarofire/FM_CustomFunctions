@@ -6,7 +6,8 @@
 //  and fieldList is a return delimited list of key names corresponding to the row keynames in the query selection. 
 //  Using wildcard field selectors is not recommended.
 // 
-// Dependancies: FileMaker 19+ for native JSON functions.
+// Dependancies:
+//  BaseElements plugin :: BE_EvaluateJavaScript( $jsCode )
 //
 // Example 0:
 //  SQL2JSON( "SELECT Id, Name FROM CONTACTS"; List( "id"; "name" ); "" )
@@ -23,33 +24,14 @@
 
 Let([
 
-/* Test Data */
-// query = "SELECT Id,JSOnfieldName FROM HL7_MAP"; fieldList = "id¶name"; sqlParams = "";
+/* Test Data: enable to test evaluate in the data viewer */
+//query = "SELECT id,note FROM CONTACTS OFFSET " & Floor(Random*1000) & " ROWS FETCH FIRST 1000 ROWS ONLY"; fieldList = "id¶note"; sqlParams = "";
 
-
-fields = Substitute( fieldList ; "¶"; "|");
-
-// Produces : "row[0].value[0]~~row[0].value[1]~~...row[0].value[n]|row[1].valuu[0]~~row[1].value[1]~~...row[1].value[n]|...row[m].value[0]~~<etc.>"
+// Produces : "row[0].value[0]~~row[0].value[1]~~...row[0].value[n]|row[1].value[0]~~row[1].value[1]~~...row[1].value[n]|...row[m].value[0]~~<etc.>"
 res = Case( IsEmpty(sqlParams);
-  ExecuteSQL( query; "~~"; "|" );
-  ExecuteSQL( query; "~~"; "|" ; sqlParams  )
+	ExecuteSQL( query; "~~"; "|" );
+	ExecuteSQL( query; "~~"; "|" ; sqlParams  )
 );
-
-// Remove all nasty characters that will likely break the silly text parsing that is necessary to handle JSON in FM... 
-res = Substitute( res; "\""; "`0`" );
-res = Substitute( res; "{"; "`1`" );
-res = Substitute( res; "}"; "`2`" );
-res = Substitute( res; "["; "`3`" );
-res = Substitute( res; "]"; "`4`" );
-res = Substitute( res; ","; "`5`" );
-res = Substitute( res; ":"; "`6`" );
-res = Substitute( res; "'"; "`7`" );
-res = Substitute( res; "\\"; "`8`" );
-
-res = Substitute( res; "¶";  " " );
-res = Substitute( res; Char(10); " " );
-res = Substitute( res; Char(22); "");
-res = Substitute( res; Char(160) ; " ");
 
 // for each row, insert the fieldName before each row's value.
 
@@ -57,44 +39,39 @@ res = Substitute( res; "|"; "¶" );
 rowCount = ValueCount( res );
 fieldCount = ValueCount( fieldList );
 res = While (
-				[ i = 1 ; result="" ] ;	// ① initialise
-				i <= rowCount;					// ② loop if condition is true
-					[											// ③ each step
-						rowValues = Substitute ( GetValue( res; i ); "~~"; "¶" );
-						newRow = While (
-							[ j = 1 ; row="" ];		// ① initialise
-							j <= fieldCount;			// ② loop if condition is true
-							[											// ③ each step
-								fieldName = GetValue ( fieldList ; j );
-								fieldValue = GetValue ( rowValues ; j );
-								row = JSONSetElement ( row ; fieldName ; fieldValue ; JSONString );
-								j = j + 1
-							] ;
-							row 									// ④ final value
-						);
-						result = If( IsEmpty(result) ; newRow; result & "," & newRow );
-						i = i + 1
-				] ;
-			"[" & result & "]"					// ④ final value
+	[ i = 1 ; result="" ] ;			// ① initialise
+	i <= rowCount;							// ② loop if condition is true
+	[														// ③ each step
+		rowValues = Substitute ( GetValue( res; i ); "~~"; "¶" );
+		newRow = While (
+			[ j = 1 ; row="" ] ;			// ① initialise
+			j <= fieldCount;					// ② loop if condition is true
+			[													// ③ each step
+				fieldName = GetValue ( fieldList ; j );
+				fieldValue = GetValue ( rowValues ; j );
+				row = If( res = "?"; 
+					"{\"__ERROR__\":\"Error in query.\"}" ; 
+					JSONSetElement ( row ; fieldName ; fieldValue ; JSONString )
+				);
+				j = j + 1
+			] ;
+			row												// ④ final value
 		);
+		result = If( IsEmpty(result) ; newRow; result & "," & newRow );
+		i = i + 1
+	] ;
+	If( JSONGetElement( result; "__ERROR__" )="Error in query."; 
+		JSONGetElement( result ; ""); 
+		"[" & result & "]"
+	)														// ④ final value
+);
 
-
-
-// re-insert some of those nasty characters into the result.
-res = Substitute( res; "`0`"; "\\\"" );
-res = Substitute( res; "`1`"; "{" );
-res = Substitute( res; "`2`"; "}"  );
-res = Substitute( res; "`3`"; "[" );
-res = Substitute( res; "`4`"; "]" );
-res = Substitute( res; "`5`"; "," );
-res = Substitute( res; "`6`"; ":" );
-res = Substitute( res; "`7`"; "'" );
-res = Substitute( res; "`8`"; "\\\\" );
-
-res = Substitute( res; "\t"; "" );
 
 f=""];
 
+/* Testing; if the JSONGetElement returns an error then the parsing of the data is somehow bad
+	which could be caused by bad data, or a bug in the json construction */
+//JSONGetElement( res; Floor(Random*1000) )
 res
 
 )
