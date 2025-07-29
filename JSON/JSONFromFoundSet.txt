@@ -6,15 +6,15 @@
 //
 // Example 0:
 //  JSONFromFoundSet( "CONTACTS::Id¶CONTACTS::Note"; 100; 0 )
-//  => "\"CONTACTS\".\"Id\""
+//  => "[{\"CONTACTS\":\"1\",\"CONTACTS\":\"Hello World\"},...,{\"CONTACTS\":\"100\",\"CONTACTS\":\"Goodbye World\"}]"
 //
 // Example 1:
-//  "SELECT " & SQLFieldName( "orders_LINEITEMS::Name" ) & " FROM orders_LINEITEMS"
-//  => "SELECT \"orders_LINEITEMS\".\"Name\" FROM orders_LINEITEMS"
+//  JSONFromFoundSet( "CONTACTS::Id¶CONTACTS::Note"; ""; 0 )
+//  => "[{\"CONTACTS\":\"1\",\"CONTACTS\":\"Hello World\"},...,{\"CONTACTS\":\"{!{Get(FoundCount)}!}\",\"CONTACTS\":\"Goodbye World\"}]"
 //
 // Version 1.0.0 : 2025:07:08 : Joshua Palmer
 // Version 1.0.1 : 2025:07:14 : Joshua Palmer : Added batch and offset
-// Version 1.0.2 : 2025:07:14 : Joshua Palmer : Fixed cross-relationship lookups. Added Table param.
+// Version 1.0.2 : 2025:07:14 : Joshua Palmer : Fixed cross-relationship lookups.
 //
 // Limitations: Slow for large found sets. (nested While loop)
 
