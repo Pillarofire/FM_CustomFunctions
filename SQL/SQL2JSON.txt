@@ -6,8 +6,7 @@
 //  and fieldList is a return delimited list of key names corresponding to the row keynames in the query selection. 
 //  Using wildcard field selectors is not recommended.
 // 
-// Dependancies:
-//  BaseElements plugin :: BE_EvaluateJavaScript( $jsCode )
+// Dependancies: FileMaker 19+ for native JSON functions.
 //
 // Example 0:
 //  SQL2JSON( "SELECT Id, Name FROM CONTACTS"; List( "id"; "name" ); "" )
@@ -17,11 +16,16 @@
 //  SQL2JSON( "SELECT Id, Name FROM CONTACTS WHERE Name LIKE '%'+?+'%'"; "id¶name"; "Doe" )
 //  => [{"id":1,"name":"John Doe"},{"id":2,"name":"Jane Doe"}]
 //
-// Version 1.0.0 : 2021:07:08 14:10:40 : Joshua Palmer
+// Version 1.0.0 : 2021:07:08 14:10:40 -0700 : Joshua Palmer
+// Version 1.1.0 : 2025:07:29 13:35:58 -0700 : Joshua Palmer : Removed dependency on BaseElements plugin, replaced with native FileMaker JSON functions.
 //
 // Limitations: Max string length of FileMaker
 
 Let([
+
+/* Test Data */
+// query = "SELECT Id,JSOnfieldName FROM HL7_MAP"; fieldList = "id¶name"; sqlParams = "";
+
 
 fields = Substitute( fieldList ; "¶"; "|");
 
@@ -47,26 +51,33 @@ res = Substitute( res; Char(10); " " );
 res = Substitute( res; Char(22); "");
 res = Substitute( res; Char(160) ; " ");
 
-// Convert the <res> string into a json string. Requires BaseElements Plug-in. using the fieldlist as key names in order of <x>.value[0],<x>.value[1]...
-// 
-res = BE_EvaluateJavaScript ( "var res = [];
-var raw = '" & res & "';
-var fieldsRaw='"& fields &"';
-var rows = raw.split('|');
-rows.forEach(function(e,i,a){
-	var o;
-	var fields = fieldsRaw.split('|');
-	if( fields.length >= 1 ){
-		o = {};
-		fields.forEach(function(ee,ei,ea){
-			o[ee]=e.split('~~')[ei];
-		});
-		if(rows.length>0 && rows[0]!=='' ){
-			res.push(o);
-		}
-	} 
-});
-JSON.stringify(res);" );
+// for each row, insert the fieldName before each row's value.
+
+res = Substitute( res; "|"; "¶" );
+rowCount = ValueCount( res );
+fieldCount = ValueCount( fieldList );
+res = While (
+				[ i = 1 ; result="" ] ;	// ① initialise
+				i <= rowCount;					// ② loop if condition is true
+					[											// ③ each step
+						rowValues = Substitute ( GetValue( res; i ); "~~"; "¶" );
+						newRow = While (
+							[ j = 1 ; row="" ];		// ① initialise
+							j <= fieldCount;			// ② loop if condition is true
+							[											// ③ each step
+								fieldName = GetValue ( fieldList ; j );
+								fieldValue = GetValue ( rowValues ; j );
+								row = JSONSetElement ( row ; fieldName ; fieldValue ; JSONString );
+								j = j + 1
+							] ;
+							row 									// ④ final value
+						);
+						result = If( IsEmpty(result) ; newRow; result & "," & newRow );
+						i = i + 1
+				] ;
+			"[" & result & "]"					// ④ final value
+		);
+
 
 
 // re-insert some of those nasty characters into the result.
