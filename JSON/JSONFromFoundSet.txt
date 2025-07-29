@@ -1,0 +1,72 @@
+// Author: Joshua Palmer - pillarofire@gmail.com
+//
+// Purpose: turn a series of records in the found set into JSON, based on the fields given.
+//
+// Dependancies: None
+//
+// Example 0:
+//  JSONFromFoundSet( "CONTACTS::Id¶CONTACTS::Note"; 100; 0 )
+//  => "\"CONTACTS\".\"Id\""
+//
+// Example 1:
+//  "SELECT " & SQLFieldName( "orders_LINEITEMS::Name" ) & " FROM orders_LINEITEMS"
+//  => "SELECT \"orders_LINEITEMS\".\"Name\" FROM orders_LINEITEMS"
+//
+// Version 1.0.0 : 2025:07:08 : Joshua Palmer
+// Version 1.0.1 : 2025:07:14 : Joshua Palmer : Added batch and offset
+// Version 1.0.2 : 2025:07:14 : Joshua Palmer : Fixed cross-relationship lookups. Added Table param.
+//
+// Limitations: Slow for large found sets. (nested While loop)
+
+Let([
+// TESTING DATA
+// fieldList="HL7_MAP::Identifiers¶HL7_MAP::JSONFieldName¶HL7_MAP::MFRCode¶HL7_MAP::Precedence";limit=100;offset=0;
+
+fieldCount = ValueCount(fieldList);
+
+// What context are we in?
+ctx = Get(LayoutTableName);
+ctxFound = Get(FoundCount);
+
+// What is the table of the field?
+fieldCtx = GetValue(Substitute(GetValue(fieldList; 1); "::"; "¶"); 1);
+fieldCtxFound = Count(GetField(GetValue(fieldList; 1)));
+
+// If those are the same, we evaluate maxRows based on FoundCount,
+// Otherwise we need to know the number of records through the Relationship.
+
+maxRows = Case(
+		ctx = fieldCtx; Min(ctxFound - offset; limit);
+		Min(fieldCtxFound - offset; limit));
+offset = Case(
+		ctx = fieldCtx; Min(ctxFound; offset);
+		Min(fieldCtxFound; offset));
+
+// Gets every field in fieldList of record i
+rows = While(
+	[i = 1; acc = ""];		// ① init
+	i ≤ maxRows;					// ② keep going?
+		[										// ③ each data line iteration
+		acc = List(acc; While(
+			[j = 1; data = ""];		// ① init
+			j ≤ fieldCount;				// ② keep going?
+				[										// ③ each field iteration
+					fld = GetValue(fieldList; j);
+					data = data &
+						If(j > 1; ","; "{") &
+						"\"" & GetValue(Substitute(fld; "::"; "¶"); 2) & "\"" &
+						":\"" &
+						GetNthRecord(GetField(fld); i + offset) &
+						"\"";
+					j = j + 1];
+			data & "}" & If(i<> maxrows; ",") // ④ final data line value
+			));
+		i = i + 1];
+	"[" & acc & "]"				// ④ final list value
+);
+
+foo = ""];
+
+rows
+
+)
