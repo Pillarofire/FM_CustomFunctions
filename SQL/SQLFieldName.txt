@@ -9,11 +9,11 @@
 // Signature: SQLFieldName( FMName ) : FMName is a fully qualified field name
 // 
 // Example 0:
-//  SQLFieldName( "CONTACTS::Id" )
+//  SQLFieldName( CONTACTS::Id )
 //  => "\"CONTACTS\".\"Id\""
 //
 // Example 1:
-//  "SELECT " & SQLFieldName( "orders_LINEITEMS::Name" ) & " FROM orders_LINEITEMS"
+//  "SELECT " & SQLFieldName( orders_LINEITEMS::Name ) & " FROM orders_LINEITEMS"
 //  => "SELECT \"Name\" FROM orders_LINEITEMS"
 //
 // Version 1.0.0 : 2020:01:08 : Joshua Palmer

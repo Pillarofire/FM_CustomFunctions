@@ -5,9 +5,9 @@
 // Dependancies: None
 //
 // Signature: JSONFromFoundSet( fieldList; limit; offset ) 
-// 	fieldList is a return delimited list of field names
-//  limit is the maximum number of records to return
-//  offset is the number of records to skip before returning results.
+//	fieldList is a return delimited list of field names
+//	limit is the maximum number of records to return
+//	offset is the number of records to skip before returning results.
 // 
 // Example 0:
 //  JSONFromFoundSet( "CONTACTS::Id¶CONTACTS::Note"; 100; 0 )
