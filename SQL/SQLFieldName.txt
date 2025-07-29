@@ -1,0 +1,29 @@
+// Author: Joshua Palmer - pillarofire@gmail.com
+//
+// Purpose: Returns a nicely formatted SQL field name in the form of "fieldName". Since FileMaker 
+// table and field names are subject to change and may contain spaces or special characters, this makes it safer to
+// use in SQL queries. 
+// 
+// Dependancies: None
+//
+// Example 0:
+//  SQLFieldName( "CONTACTS::Id" )
+//  => "\"CONTACTS\".\"Id\""
+//
+// Example 1:
+//  "SELECT " & SQLFieldName( "orders_LINEITEMS::Name" ) & " FROM orders_LINEITEMS"
+//  => "SELECT \"Name\" FROM orders_LINEITEMS"
+//
+// Version 1.0.0 : 2020:01:08 : Joshua Palmer
+//
+// Limitations: None
+
+
+Let( [
+	name = GetFieldName( FMName );
+	st = Position ( name ; "::"; 0; 1 );
+	tblName = Middle( name; 0; st - 1);
+	fieldName = Middle( name; st+2; Length( name ) )
+];
+	"\"" & fieldName & "\""
+)

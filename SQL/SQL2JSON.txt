@@ -1,0 +1,88 @@
+// Author: Joshua Palmer - pillarofire@gmail.com
+//
+// Purpose: Take a FM SQL query string as would be passed to 'ExecuteSQL' and convert it into JSON, in the form of [{row[0]},{row[1]},{row[N]}]
+//  where {resultN} is of the form of {"<GetValue( fieldList ; 1 )>": "<row[N].value[0]>","<GetValue( fieldList ; 2 )>": "<row[N].value[1]>",
+//  "<GetValue( fieldList ; M )>": "<row[N].value[M-1]>"} ; 
+//  and fieldList is a return delimited list of key names corresponding to the row keynames in the query selection. 
+//  Using wildcard field selectors is not recommended.
+// 
+// Dependancies:
+//  BaseElements plugin :: BE_EvaluateJavaScript( $jsCode )
+//
+// Example 0:
+//  SQL2JSON( "SELECT Id, Name FROM CONTACTS"; List( "id"; "name" ); "" )
+//  => [{"id":1,"name":"John Doe"},{"id":2,"name":"Jane Doe"},{"id":3,"name":"Jack Blue"},{...}]
+//
+// Example 1:
+//  SQL2JSON( "SELECT Id, Name FROM CONTACTS WHERE Name LIKE '%'+?+'%'"; "id¶name"; "Doe" )
+//  => [{"id":1,"name":"John Doe"},{"id":2,"name":"Jane Doe"}]
+//
+// Version 1.0.0 : 2021:07:08 14:10:40 : Joshua Palmer
+//
+// Limitations: Max string length of FileMaker
+
+Let([
+
+fields = Substitute( fieldList ; "¶"; "|");
+
+// Produces : "row[0].value[0]~~row[0].value[1]~~...row[0].value[n]|row[1].valuu[0]~~row[1].value[1]~~...row[1].value[n]|...row[m].value[0]~~<etc.>"
+res = Case( IsEmpty(sqlParams);
+  ExecuteSQL( query; "~~"; "|" );
+  ExecuteSQL( query; "~~"; "|" ; sqlParams  )
+);
+
+// Remove all nasty characters that will likely break the silly text parsing that is necessary to handle JSON in FM... 
+res = Substitute( res; "\""; "`0`" );
+res = Substitute( res; "{"; "`1`" );
+res = Substitute( res; "}"; "`2`" );
+res = Substitute( res; "["; "`3`" );
+res = Substitute( res; "]"; "`4`" );
+res = Substitute( res; ","; "`5`" );
+res = Substitute( res; ":"; "`6`" );
+res = Substitute( res; "'"; "`7`" );
+res = Substitute( res; "\\"; "`8`" );
+
+res = Substitute( res; "¶";  " " );
+res = Substitute( res; Char(10); " " );
+res = Substitute( res; Char(22); "");
+res = Substitute( res; Char(160) ; " ");
+
+// Convert the <res> string into a json string. Requires BaseElements Plug-in. using the fieldlist as key names in order of <x>.value[0],<x>.value[1]...
+// 
+res = BE_EvaluateJavaScript ( "var res = [];
+var raw = '" & res & "';
+var fieldsRaw='"& fields &"';
+var rows = raw.split('|');
+rows.forEach(function(e,i,a){
+	var o;
+	var fields = fieldsRaw.split('|');
+	if( fields.length >= 1 ){
+		o = {};
+		fields.forEach(function(ee,ei,ea){
+			o[ee]=e.split('~~')[ei];
+		});
+		if(rows.length>0 && rows[0]!=='' ){
+			res.push(o);
+		}
+	} 
+});
+JSON.stringify(res);" );
+
+// re-insert some of those nasty characters into the result.
+res = Substitute( res; "`0`"; "\\\"" );
+res = Substitute( res; "`1`"; "{" );
+res = Substitute( res; "`2`"; "}"  );
+res = Substitute( res; "`3`"; "[" );
+res = Substitute( res; "`4`"; "]" );
+res = Substitute( res; "`5`"; "," );
+res = Substitute( res; "`6`"; ":" );
+res = Substitute( res; "`7`"; "'" );
+res = Substitute( res; "`8`"; "\\\\" );
+
+res = Substitute( res; "\t"; "" );
+
+f=""];
+
+res
+
+)
